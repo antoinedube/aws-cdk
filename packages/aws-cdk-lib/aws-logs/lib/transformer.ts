@@ -877,7 +877,7 @@ export class ParserProcessor implements IProcessor {
         }
         this.parseToOCSFOptions = {
           source: '@message',
-          ... props.parseToOCSFOptions,
+          ...props.parseToOCSFOptions,
         };
         break;
 
@@ -925,15 +925,15 @@ export class VendedLogParser implements IProcessor {
   public _render(): any {
     switch (this.logType) {
       case VendedLogType.CLOUDFRONT:
-        return { parseCloudfront: { } };
+        return { parseCloudfront: {} };
       case VendedLogType.VPC:
-        return { parseVpc: { } };
+        return { parseVpc: {} };
       case VendedLogType.WAF:
-        return { parseWaf: { } };
+        return { parseWaf: {} };
       case VendedLogType.ROUTE53:
-        return { parseRoute53: { } };
+        return { parseRoute53: {} };
       case VendedLogType.POSTGRES:
-        return { parsePostgres: { } };
+        return { parsePostgres: {} };
       default:
         throw new UnscopedValidationError(`Unsupported vended log type: ${this.logType}`);
     }
@@ -1152,14 +1152,14 @@ export class DataConverterProcessor implements IProcessor {
 
       case DataConverterType.DATETIME_CONVERTER:
         if (!props.dateTimeConverterOptions || !props.dateTimeConverterOptions.source ||
-            !props.dateTimeConverterOptions.target || !props.dateTimeConverterOptions.matchPatterns) {
+          !props.dateTimeConverterOptions.target || !props.dateTimeConverterOptions.matchPatterns) {
           throw new UnscopedValidationError('dateTimeConverterOptions with source, target and matchPatterns must be provided for DATETIME_CONVERTER data converter');
         }
         this.dateTimeConverterOptions = {
           targetFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
           sourceTimezone: 'UTC',
           targetTimezone: 'UTC',
-          ... props.dateTimeConverterOptions,
+          ...props.dateTimeConverterOptions,
         };
         break;
 
@@ -1208,7 +1208,7 @@ export class Transformer extends Resource {
     this.validateLogGroupClass(props.logGroup);
 
     // Map the transformer configuration to the L1 CloudFormation resource
-    new CfnTransformer(scope, 'ResourceTransformer', {
+    new CfnTransformer(scope, id, {
       logGroupIdentifier: props.logGroup.logGroupName,
       transformerConfig: props.transformerConfig.map(processor => processor._render()),
     });
@@ -1243,7 +1243,7 @@ export class Transformer extends Resource {
       return;
     }
     // Validate first processor is a parser
-    if (! (processors.at(0) instanceof ParserProcessor || processors.at(0) instanceof VendedLogParser)) {
+    if (!(processors.at(0) instanceof ParserProcessor || processors.at(0) instanceof VendedLogParser)) {
       throw new ValidationError('First processor in a transformer must be a parser', this);
     }
 
@@ -1317,7 +1317,7 @@ export class Transformer extends Resource {
     }
     if (parseToOcsfProcessors.length > 0) {
       const parseToOcsfIndex = processors.findIndex(p => p instanceof ParserProcessor && (p as ParserProcessor).type === ParserProcessorType.OCSF);
-      if (parseToOcsfIndex != 0 ) {
+      if (parseToOcsfIndex != 0) {
         throw new ValidationError('parseToOCSF processor must be the first processor in a transformer', this);
       }
     }
