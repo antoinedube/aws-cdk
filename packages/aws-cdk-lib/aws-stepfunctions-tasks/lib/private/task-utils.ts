@@ -2,6 +2,7 @@ import {
   IntegrationPattern,
   JsonPath,
 } from '../../../aws-stepfunctions';
+import { isValidJsonataExpression } from '../../../aws-stepfunctions/lib/private/jsonata';
 import { Aws, UnscopedValidationError } from '../../../core';
 
 /**
@@ -10,7 +11,7 @@ import { Aws, UnscopedValidationError } from '../../../core';
  */
 export function validatePatternSupported(integrationPattern: IntegrationPattern, supportedPatterns: IntegrationPattern[]) {
   if (!supportedPatterns.includes(integrationPattern)) {
-    throw new UnscopedValidationError(`Unsupported service integration pattern. Supported Patterns: ${supportedPatterns}. Received: ${integrationPattern}`);
+    throw new UnscopedValidationError('UnsupportedServiceIntegrationPatternSupported', `Unsupported service integration pattern. Supported Patterns: ${supportedPatterns}. Received: ${integrationPattern}`);
   }
 }
 
@@ -29,22 +30,15 @@ const resourceArnSuffix: Record<IntegrationPattern, string> = {
 
 export function integrationResourceArn(service: string, api: string, integrationPattern?: IntegrationPattern): string {
   if (!service || !api) {
-    throw new UnscopedValidationError("Both 'service' and 'api' must be provided to build the resource ARN.");
+    throw new UnscopedValidationError('MustBeBothServiceApi', "Both 'service' and 'api' must be provided to build the resource ARN.");
   }
   return `arn:${Aws.PARTITION}:states:::${service}:${api}` +
     (integrationPattern ? resourceArnSuffix[integrationPattern] : '');
 }
 
 /**
- * Determines if the indicated string is an JSONata expression
- */
-export function isJsonataExpression(value: string) {
-  return /^{%(.*)%}$/.test(value);
-}
-
-/**
  * Determines if the indicated string is an encoded JSON path or JSONata expression
  */
 export function isJsonPathOrJsonataExpression(value: string) {
-  return JsonPath.isEncodedJsonPath(value) || isJsonataExpression(value);
+  return JsonPath.isEncodedJsonPath(value) || isValidJsonataExpression(value);
 }

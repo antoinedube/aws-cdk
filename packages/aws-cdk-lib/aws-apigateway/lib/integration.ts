@@ -1,8 +1,27 @@
-import { Method } from './method';
-import { IVpcLink, VpcLink } from './vpc-link';
-import * as iam from '../../aws-iam';
-import { Lazy, Duration } from '../../core';
+import type { Method } from './method';
+import type { IVpcLink } from './vpc-link';
+import { VpcLink } from './vpc-link';
+import type * as iam from '../../aws-iam';
+import type { Duration } from '../../core';
+import { Lazy } from '../../core';
 import { UnscopedValidationError, ValidationError } from '../../core/lib/errors';
+
+/**
+ * The response transfer mode of the integration
+ */
+export enum ResponseTransferMode {
+  /**
+   * API Gateway waits to receive the complete response before beginning transmission.
+   */
+  BUFFERED = 'BUFFERED',
+
+  /**
+   * API Gateway streams the response back to you as it is received from the integration.
+   *
+   * This is only supported for AWS_PROXY and HTTP_PROXY integration types.
+   */
+  STREAM = 'STREAM',
+}
 
 export interface IntegrationOptions {
   /**
@@ -115,6 +134,15 @@ export interface IntegrationOptions {
    * Required if connectionType is VPC_LINK
    */
   readonly vpcLink?: IVpcLink;
+
+  /**
+   * The response transfer mode for the integration.
+   *
+   * To enable response streaming, set this value to `ResponseTransferMode.STREAM`.
+   *
+   * @default ResponseTransferMode.BUFFERED
+   */
+  readonly responseTransferMode?: ResponseTransferMode;
 }
 
 export interface IntegrationProps {
@@ -200,23 +228,30 @@ export class Integration {
   constructor(private readonly props: IntegrationProps) {
     const options = this.props.options || { };
     if (options.credentialsPassthrough !== undefined && options.credentialsRole !== undefined) {
-      throw new UnscopedValidationError('\'credentialsPassthrough\' and \'credentialsRole\' are mutually exclusive');
+      throw new UnscopedValidationError('CredentialsPassthroughCredentialsRoleMutually', '\'credentialsPassthrough\' and \'credentialsRole\' are mutually exclusive');
     }
 
     if (options.connectionType === ConnectionType.VPC_LINK && options.vpcLink === undefined) {
-      throw new UnscopedValidationError('\'connectionType\' of VPC_LINK requires \'vpcLink\' prop to be set');
+      throw new UnscopedValidationError('RequiresConnectiontypeVpcLinkRequires', '\'connectionType\' of VPC_LINK requires \'vpcLink\' prop to be set');
     }
 
     if (options.connectionType === ConnectionType.INTERNET && options.vpcLink !== undefined) {
-      throw new UnscopedValidationError('cannot set \'vpcLink\' where \'connectionType\' is INTERNET');
+      throw new UnscopedValidationError('CannotSetVpcLinkConnection', 'cannot set \'vpcLink\' where \'connectionType\' is INTERNET');
     }
 
     if (options.timeout && !options.timeout.isUnresolved() && options.timeout.toMilliseconds() < 50) {
-      throw new UnscopedValidationError('Integration timeout must be greater than 50 milliseconds.');
+      throw new UnscopedValidationError('MustBeIntegrationTimeoutGreater', 'Integration timeout must be greater than 50 milliseconds.');
     }
 
     if (props.type !== IntegrationType.MOCK && !props.integrationHttpMethod) {
-      throw new UnscopedValidationError('integrationHttpMethod is required for non-mock integration types.');
+      throw new UnscopedValidationError('IntegrationHttpMethodRequiredNon', 'integrationHttpMethod is required for non-mock integration types.');
+    }
+
+    if (
+      options.responseTransferMode === ResponseTransferMode.STREAM &&
+      ![IntegrationType.AWS_PROXY, IntegrationType.HTTP_PROXY].includes(props.type)
+    ) {
+      throw new UnscopedValidationError('ResponseTransferModeSupportedInteg', `ResponseTransferMode STREAM is only supported for AWS_PROXY and HTTP_PROXY integration types, got: ${props.type}`);
     }
   }
 
@@ -236,12 +271,12 @@ export class Integration {
           if (vpcLink instanceof VpcLink) {
             const targets = vpcLink._targetDnsNames;
             if (targets.length > 1) {
-              throw new ValidationError("'uri' is required when there are more than one NLBs in the VPC Link", method);
+              throw new ValidationError('IsRequiredUriRequiredThere', "'uri' is required when there are more than one NLBs in the VPC Link", method);
             } else {
               return `http://${targets[0]}`;
             }
           } else {
-            throw new ValidationError("'uri' is required when the 'connectionType' is VPC_LINK", method);
+            throw new ValidationError('IsRequiredUriRequiredConnectiontype', "'uri' is required when the 'connectionType' is VPC_LINK", method);
           }
         },
       });

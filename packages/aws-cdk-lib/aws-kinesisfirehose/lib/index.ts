@@ -7,6 +7,8 @@ export * from './processors/lambda-function-processor';
 export * from './processors/decompression-processor';
 export * from './processors/cloudwatch-log-processor';
 export * from './processors/append-delimiter-to-record-processor';
+export * from './processors/metadata-extraction-processor';
+export * from './processors/record-deaggregation-processor';
 export * from './common';
 export * from './s3-bucket';
 export * from './logging-config';
@@ -14,3 +16,4 @@ export * from './record-format';
 
 // AWS::KinesisFirehose CloudFormation Resources:
 export * from './kinesisfirehose.generated';
+export * from './kinesisfirehose-grants.generated';

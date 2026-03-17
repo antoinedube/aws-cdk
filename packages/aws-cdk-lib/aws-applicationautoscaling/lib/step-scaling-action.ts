@@ -1,8 +1,8 @@
 import { Construct } from 'constructs';
 import { CfnScalingPolicy } from './applicationautoscaling.generated';
-import { IScalableTarget } from './scalable-target';
 import * as cdk from '../../core';
 import { ValidationError } from '../../core/lib/errors';
+import type { IScalableTargetRef } from '../../interfaces/generated/aws-applicationautoscaling-interfaces.generated';
 
 /**
  * Properties for a scaling policy
@@ -11,7 +11,7 @@ export interface StepScalingActionProps {
   /**
    * The scalable target
    */
-  readonly scalingTarget: IScalableTarget;
+  readonly scalingTarget: IScalableTargetRef;
 
   /**
    * A name for the scaling policy
@@ -85,7 +85,7 @@ export class StepScalingAction extends Construct {
     const resource = new CfnScalingPolicy(this, 'Resource', {
       policyName: props.policyName || cdk.Names.uniqueId(this),
       policyType: 'StepScaling',
-      scalingTargetId: props.scalingTarget.scalableTargetId,
+      scalingTargetId: props.scalingTarget.scalableTargetRef.resourceId,
       stepScalingPolicyConfiguration: {
         adjustmentType: props.adjustmentType,
         cooldown: props.cooldown && props.cooldown.toSeconds(),
@@ -103,7 +103,7 @@ export class StepScalingAction extends Construct {
    */
   public addAdjustment(adjustment: AdjustmentTier) {
     if (adjustment.lowerBound === undefined && adjustment.upperBound === undefined) {
-      throw new ValidationError('At least one of lowerBound or upperBound is required', this);
+      throw new ValidationError('LeastOneLowerBoundUpper', 'At least one of lowerBound or upperBound is required', this);
     }
     this.adjustments.push({
       metricIntervalLowerBound: adjustment.lowerBound,

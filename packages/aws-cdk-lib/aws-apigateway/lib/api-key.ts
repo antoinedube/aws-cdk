@@ -1,11 +1,15 @@
-import { Construct } from 'constructs';
-import { ApiKeyReference, CfnApiKey, IApiKeyRef, IStageRef } from './apigateway.generated';
-import { ResourceOptions } from './resource';
-import { IRestApi } from './restapi';
-import { IStage } from './stage';
-import { QuotaSettings, ThrottleSettings, UsagePlan, UsagePlanPerApiStage } from './usage-plan';
-import * as iam from '../../aws-iam';
-import { ArnFormat, IResource as IResourceBase, Resource, Stack } from '../../core';
+import type { Construct } from 'constructs';
+import { ApiKeyGrants } from './apigateway-grants.generated';
+import type { ApiKeyReference, IApiKeyRef, IStageRef } from './apigateway.generated';
+import { CfnApiKey } from './apigateway.generated';
+import type { ResourceOptions } from './resource';
+import type { IRestApi } from './restapi';
+import type { IStage } from './stage';
+import type { QuotaSettings, ThrottleSettings, UsagePlanPerApiStage } from './usage-plan';
+import { UsagePlan } from './usage-plan';
+import type * as iam from '../../aws-iam';
+import type { IResource as IResourceBase } from '../../core';
+import { ArnFormat, Resource, Stack } from '../../core';
 import { ValidationError } from '../../core/lib/errors';
 import { addConstructMetadata } from '../../core/lib/metadata-resource';
 import { propertyInjectable } from '../../core/lib/prop-injectable';
@@ -101,42 +105,47 @@ abstract class ApiKeyBase extends Resource implements IApiKey {
   public abstract readonly keyArn: string;
 
   /**
+   * Collection of grant methods for an ApiKey
+   */
+  public readonly grants = ApiKeyGrants.fromApiKey(this);
+
+  /**
    * Permits the IAM principal all read operations through this key
+   *
+   * The use of this method is discouraged. Please use `grants.read()` instead.
+   *
+   * [disable-awslint:no-grants]
    *
    * @param grantee The principal to grant access to
    */
   public grantRead(grantee: iam.IGrantable): iam.Grant {
-    return iam.Grant.addToPrincipal({
-      grantee,
-      actions: readPermissions,
-      resourceArns: [this.keyArn],
-    });
+    return this.grants.read(grantee);
   }
 
   /**
    * Permits the IAM principal all write operations through this key
    *
+   * The use of this method is discouraged. Please use `grants.write()` instead.
+   *
+   * [disable-awslint:no-grants]
+   *
    * @param grantee The principal to grant access to
    */
   public grantWrite(grantee: iam.IGrantable): iam.Grant {
-    return iam.Grant.addToPrincipal({
-      grantee,
-      actions: writePermissions,
-      resourceArns: [this.keyArn],
-    });
+    return this.grants.write(grantee);
   }
 
   /**
    * Permits the IAM principal all read and write operations through this key
    *
+   * The use of this method is discouraged. Please use `grants.readWrite()` instead.
+   *
+   * [disable-awslint:no-grants]
+   *
    * @param grantee The principal to grant access to
    */
   public grantReadWrite(grantee: iam.IGrantable): iam.Grant {
-    return iam.Grant.addToPrincipal({
-      grantee,
-      actions: [...readPermissions, ...writePermissions],
-      resourceArns: [this.keyArn],
-    });
+    return this.grants.readWrite(grantee);
   }
 
   public get apiKeyRef(): ApiKeyReference {
@@ -213,14 +222,14 @@ export class ApiKey extends ApiKeyBase {
     }
 
     if (resources && stages) {
-      throw new ValidationError('Only one of "resources" or "stages" should be provided', this);
+      throw new ValidationError('ShouldBeOnlyResourcesStages', 'Only one of "resources" or "stages" should be provided', this);
     }
 
     return resources
       ? resources.map((resource: IRestApi) => {
         const restApi = resource;
         if (!restApi.deploymentStage) {
-          throw new ValidationError('Cannot add an ApiKey to a RestApi that does not contain a "deploymentStage".\n'+
+          throw new ValidationError('CannotAddApiKeyRest', 'Cannot add an ApiKey to a RestApi that does not contain a "deploymentStage".\n'+
           'Either set the RestApi.deploymentStage or create an ApiKey from a Stage', this);
         }
         const restApiId = restApi.restApiId;
@@ -294,14 +303,3 @@ export class RateLimitedApiKey extends ApiKeyBase {
     this.keyArn = resource.keyArn;
   }
 }
-
-const readPermissions = [
-  'apigateway:GET',
-];
-
-const writePermissions = [
-  'apigateway:POST',
-  'apigateway:PUT',
-  'apigateway:PATCH',
-  'apigateway:DELETE',
-];

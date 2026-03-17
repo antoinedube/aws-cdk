@@ -71,7 +71,7 @@ export interface EbsDeviceOptionsBase {
 
   /**
    * The throughput that the volume supports, in MiB/s
-   * Takes a minimum of 125 and maximum of 1000.
+   * Takes a minimum of 125 and maximum of 2000.
    * @see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
    * @default - 125 MiB/s. Only valid on gp3 volumes.
    */
@@ -156,7 +156,7 @@ export class BlockDeviceVolume {
    */
   public static ephemeral(volumeIndex: number) {
     if (volumeIndex < 0) {
-      throw new UnscopedValidationError(`volumeIndex must be a number starting from 0, got "${volumeIndex}"`);
+      throw new UnscopedValidationError('VolumeIndexMustBeNonNegative', `volumeIndex must be a number starting from 0, got "${volumeIndex}"`);
     }
 
     return new this(undefined, `ephemeral${volumeIndex}`);

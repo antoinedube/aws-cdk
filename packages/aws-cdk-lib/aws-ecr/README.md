@@ -248,7 +248,7 @@ repository.addToResourcePolicy(new iam.PolicyStatement({
 }));
 ```
 
-## import existing repository
+## Import existing repository
 
 You can import an existing repository into your CDK app using the `Repository.fromRepositoryArn`, `Repository.fromRepositoryName` or `Repository.fromLookup` method.
 These methods take the ARN or the name of the repository and returns an `IRepository` object.
@@ -286,4 +286,17 @@ const lambdaHandler = new lambda.Function(this, 'LambdaFunction', {
 repo.onEvent('OnEventTargetLambda', {
   target: new LambdaFunction(lambdaHandler),
 });
+```
+
+## Mixins
+
+ECR provides [mixins](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html#mixins) that can be applied to L1 and L2 constructs.
+
+### RepositoryAutoDeleteImages
+
+Automatically deletes all images from a repository when it is removed from the stack or when the stack is deleted. Requires the repository's removal policy to be set to `DESTROY`:
+
+```ts
+new ecr.CfnRepository(this, 'Repo')
+  .with(new ecr.mixins.RepositoryAutoDeleteImages());
 ```

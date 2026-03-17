@@ -1,6 +1,8 @@
 export * from './aspect';
 export * from './tag-aspect';
 
+export * from './mixins';
+
 export * from './token';
 export * from './resolvable';
 export * from './type-hints';
@@ -36,7 +38,7 @@ export * from './duration';
 export * from './expiration';
 export * from './size';
 export * from './stack-trace';
-export { Element } from './deps';
+export type { Element } from './deps';
 export * from './errors';
 
 export * from './app';
@@ -68,6 +70,10 @@ export * from './feature-flags';
 export * from './permissions-boundary';
 
 export * from './validation';
+
+export * from './eventbridge';
+
+export * from './grants';
 
 // WARNING: Should not be exported, but currently is because of a bug. See the
 // class description for more information.

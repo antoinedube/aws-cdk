@@ -4,6 +4,7 @@ import { Construct, Node } from 'constructs';
 import { toCloudFormation } from './util';
 import * as cxapi from '../../cx-api';
 import { Fact, RegionInfo } from '../../region-info';
+import type { ITaggableV2 } from '../lib';
 import {
   App, CfnCondition, CfnInclude, CfnOutput, CfnParameter,
   CfnResource, Lazy, ScopedAws, Stack, validateString,
@@ -15,11 +16,7 @@ import {
   Aspects,
   Stage,
   TagManager,
-  Resource,
   TagType,
-  ITaggable,
-  ITaggableV2,
-  Token,
 } from '../lib';
 import { Intrinsic } from '../lib/private/intrinsic';
 import { resolveReferences } from '../lib/private/refs';
@@ -1836,7 +1833,6 @@ describe('stack', () => {
 
     expect(() => {
       app.synth();
-      // eslint-disable-next-line max-len
     }).toThrow("'Stack1' depends on 'Stack2' (Stack1 -> Stack2.AWS::AccountId). Adding this dependency (Stack2 -> Stack1.AWS::AccountId) would create a cyclic reference.");
   });
 
@@ -2146,8 +2142,8 @@ describe('stack', () => {
       },
     ];
 
-    expect(asm.getStackArtifact(stack1.artifactId).manifest.metadata).toEqual({ '/stack1': expected });
-    expect(asm.getStackArtifact(stack2.artifactId).manifest.metadata).toEqual({ '/stack1/stack2': expected });
+    expect(asm.getStackArtifact(stack1.artifactId).metadata).toEqual({ '/stack1': expected });
+    expect(asm.getStackArtifact(stack2.artifactId).metadata).toEqual({ '/stack1/stack2': expected });
   });
 
   test('stack tags are reflected in the stack artifact properties', () => {
@@ -2193,7 +2189,7 @@ describe('stack', () => {
       const asm = app.synth();
 
       const stackArtifact = asm.getStackArtifact(stack.artifactId);
-      expect(stackArtifact.manifest.metadata).toEqual({
+      expect(stackArtifact.metadata).toEqual({
         '/stack1': [
           {
             type: 'aws:cdk:stack-tags',
@@ -2256,7 +2252,7 @@ describe('stack', () => {
       stackTraces: false,
     });
 
-    const stack = new Stack(app, 'stack1', {
+    new Stack(app, 'stack1', {
       tags: {
         foo: Lazy.string({ produce: () => 'lazy' }),
       },
@@ -2264,7 +2260,7 @@ describe('stack', () => {
 
     const asm = app.synth();
     const stackArtifact = asm.stacks[0];
-    expect(stackArtifact.manifest.metadata?.['/stack1']).toEqual([
+    expect(stackArtifact.metadata?.['/stack1']).toEqual([
       {
         type: 'aws:cdk:warning',
         data: expect.stringContaining('Ignoring stack tags that contain deploy-time values'),

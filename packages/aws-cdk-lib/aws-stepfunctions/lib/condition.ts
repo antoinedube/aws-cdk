@@ -1,4 +1,5 @@
 import { UnscopedValidationError } from '../../core';
+import { isValidJsonataExpression } from './private/jsonata';
 
 /**
  * A Condition for use in a Choice state branch
@@ -413,7 +414,7 @@ class VariableComparison extends Condition {
   constructor(private readonly variable: string, private readonly comparisonOperator: ComparisonOperator, private readonly value: any) {
     super();
     if (!/^\$|(\$[.[])/.test(variable)) {
-      throw new UnscopedValidationError(`Variable reference must be '$', start with '$.', or start with '$[', got '${variable}'`);
+      throw new UnscopedValidationError('InvalidVariableReference', `Variable reference must be '$', start with '$.', or start with '$[', got '${variable}'`);
     }
   }
 
@@ -435,7 +436,7 @@ class CompoundCondition extends Condition {
     super();
     this.conditions = conditions;
     if (conditions.length === 0) {
-      throw new UnscopedValidationError('Must supply at least one inner condition for a logical combination');
+      throw new UnscopedValidationError('MissingInnerCondition', 'Must supply at least one inner condition for a logical combination');
     }
   }
 
@@ -467,8 +468,8 @@ class NotCondition extends Condition {
 class JsonataCondition extends Condition {
   constructor(private readonly condition: string) {
     super();
-    if (!/^{%(.*)%}$/.test(condition)) {
-      throw new UnscopedValidationError(`JSONata expression must be start with '{%' and end with '%}', got '${condition}'`);
+    if (!isValidJsonataExpression(condition)) {
+      throw new UnscopedValidationError('InvalidJsonataExpression', `JSONata expression must start with '{%' and end with '%}', got '${condition}'`);
     }
   }
 
