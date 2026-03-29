@@ -1208,7 +1208,7 @@ export class Transformer extends Resource {
     this.validateLogGroupClass(props.logGroup);
 
     // Map the transformer configuration to the L1 CloudFormation resource
-    new CfnTransformer(scope, 'ResourceTransformer', {
+    new CfnTransformer(scope, id, {
       logGroupIdentifier: props.logGroup.logGroupRef.logGroupName,
       transformerConfig: props.transformerConfig.map(processor => processor._render()),
     });
